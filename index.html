@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For My Thel ❤️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Quicksand:wght@400;600&family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="icon" href="https://img.icons8.com/emoji/48/heart-suit.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --primary: #ff4d6d;
+            --secondary: #ffb3c1;
+            --glass: rgba(255, 255, 255, 0.95);
+            --text: #590d22;
+            --bg-color: #fff0f3;
+        }
+
+        * { box-sizing: border-box; transition: background-color 0.8s ease; }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-color) 0%, #ffb3c1 100%);
+            color: var(--text);
+            font-family: 'Quicksand', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        /* Battle UI */
+        .battle-container {
+            width: 100%;
+            background: #000;
+            border: 4px solid #fff;
+            padding: 15px;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .hp-section { text-align: left; font-size: 8px; margin-bottom: 5px; }
+        .hp-bar-bg { width: 100%; height: 10px; background: #333; border: 1px solid #fff; position: relative; }
+        .hp-fill { height: 100%; background: #00ff00; width: 100%; transition: width 0.5s ease; }
+        .boss-sprite { width: 100px; height: 100px; filter: grayscale(1) brightness(0.5); animation: shake 2s infinite; }
+        .dialogue-box { 
+            background: #000; border: 2px solid #fff; padding: 10px; min-height: 60px; 
+            font-size: 8px; text-align: left; line-height: 1.5;
+        }
+        .move-grid-battle { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
+        .btn-move { 
+            background: #fff; color: #000; border: none; padding: 8px; 
+            font-family: 'Press Start 2P'; font-size: 7px; cursor: pointer; 
+        }
+
+        /* Sparkles & Floating */
+        .sparkle { position: absolute; pointer-events: none; animation: explode 0.8s ease-out forwards; z-index: 9999; }
+        @keyframes explode {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        .word-float {
+            position: absolute; color: var(--primary); font-size: 0.9rem;
+            font-weight: bold; pointer-events: none; z-index: 5;
+            animation: floatUpWord 4s ease-out forwards; opacity: 0;
+        }
+        @keyframes floatUpWord {
+            0% { transform: translateY(0); opacity: 0; }
+            20% { opacity: 0.8; }
+            100% { transform: translateY(-200px); opacity: 0; }
+        }
+
+        .bg-heart { position: absolute; color: rgba(255, 77, 109, 0.2); font-size: 20px; pointer-events: none; z-index: 0; animation: floatUp 6s linear infinite; }
+        @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg); opacity: 1; } 100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; } }
+
+        .container {
+            width: 90%; max-width: 450px; background: var(--glass);
+            backdrop-filter: blur(12px); padding: 25px; border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1); text-align: center;
+            z-index: 10; border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .page { display: none; flex-direction: column; align-items: center; }
+        .page.active { display: flex; animation: fadeInScale 0.5s ease-out; }
+
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        h1 { font-family: 'Dancing Script', cursive; font-size: 2.2rem; color: var(--primary); margin: 10px 0; }
+        p { font-weight: 600; line-height: 1.4; margin-bottom: 15px; font-size: 0.9rem; }
+
+        input { padding: 12px; width: 100%; border: 2px solid var(--secondary); border-radius: 12px; margin-bottom: 10px; text-align: center; font-size: 1rem; }
+
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 50px; font-weight: bold; cursor: pointer; margin: 5px; transition: 0.3s; box-shadow: 0 4px 12px rgba(255, 77, 109, 0.3); }
+        .btn-yes { background: #2ec4b6 !important; position: relative; z-index: 11; }
+        #runaway-no { transition: all 0.2s ease-out; z-index: 9999; position: relative; white-space: nowrap; }
+
+        .photo-frame { width: 100%; height: 260px; object-fit: cover; border-radius: 18px; border: 4px solid white; box-shadow: 0 8px 16px rgba(0,0,0,0.1); margin-bottom: 10px; }
+
+        .stats-container { width: 100%; background: rgba(255,255,255,0.6); padding: 10px; border-radius: 15px; margin-bottom: 15px; display: none; }
+        .stat-row { display: flex; align-items: center; margin: 4px 0; font-size: 0.7rem; font-weight: bold; }
+        .bar-bg { flex-grow: 1; background: #ddd; height: 6px; border-radius: 3px; margin-left: 8px; overflow: hidden; }
+        .bar-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.5s ease; }
+
+        .chest-container { cursor: pointer; margin: 20px 0; animation: bounce 1s infinite; }
+        #chest-closed { font-size: 5rem; transition: transform 0.3s; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+        /* FLIPBOOK ANIMATIONS */
+        #memory-zoom-container {
+            display: none; flex-direction: column; align-items: center; width: 100%;
+        }
+
+        .video-flipbook-frame {
+            position: relative; width: 100%; max-width: 300px; 
+            border: 10px solid #fff; outline: 1px solid #ddd;
+            background: #000; overflow: hidden; line-height: 0;
+            transform-origin: left;
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.2);
+            animation: pageFlip 1.2s ease-out forwards;
+        }
+
+        @keyframes pageFlip {
+            0% { transform: perspective(1000px) rotateY(-90deg); opacity: 0; }
+            100% { transform: perspective(1000px) rotateY(0deg); opacity: 1; }
+        }
+
+        #memory-video { 
+            width: 100%; 
+            filter: sepia(0.2) contrast(1.1); 
+        }
+
+        /* FIXED FILM GRAIN */
+        .film-grain {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 2; opacity: 0.1;
+        }
+        .film-grain::after {
+            content: ""; position: absolute; top: -100%; left: -100%; width: 300%; height: 300%;
+            background-image: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
+            animation: grainMove 0.8s steps(10) infinite;
+        }
+        @keyframes grainMove {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-5%, -10%); }
+            50% { transform: translate(7%, 9%); }
+        }
+
+        .select-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; }
+        .char-card { background: white; border: 3px solid transparent; border-radius: 15px; padding: 8px; cursor: pointer; transition: 0.3s; }
+        .char-card.selected { border-color: var(--primary); transform: translateY(-3px); }
+        .char-card img { width: 100%; height: 80px; object-fit: cover; border-radius: 10px; }
+        .char-card span { font-weight: bold; font-size: 0.7rem; display: block; margin-top: 5px; }
+
+        .secret-note { background: #fff9fa; padding: 15px; border-radius: 15px; border: 1px solid var(--secondary); margin-top: 10px; font-style: italic; display: none; font-size: 0.85rem; line-height: 1.5; }
+        .scratch-wrapper { position: relative; width: 100%; margin-top: 15px; display: none; }
+        .ticket { background: #fff; border: 2px dashed var(--primary); padding: 15px; border-radius: 15px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        #scratch-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; border-radius: 15px; z-index: 20; }
+
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            50% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, 1px) rotate(0deg); }
+        }
+    </style>
+</head>
+<body onclick="createSparkle(event)">
+
+    <audio id="bgMusic" loop>
+        <source src="YOUR_SONG_URL_HERE.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="container">
+        <div id="page-login" class="page active">
+            <h1>Identity Check</h1>
+            <p>Authorized access for one person only.</p>
+            <input type="text" id="name-input" autocomplete="off" placeholder="...">
+            <div id="error-msg" style="visibility:hidden; color:var(--primary); font-weight:bold; margin-bottom:10px;">GET OUT😡 YOU ARE NOT HER!!!</div>
+            <button class="btn" onclick="checkName()">Unlock ❤️</button>
+        </div>
+
+        <div id="page1" class="page">
+            <h1>Hi Thel ✨</h1>
+            <p>Before I ask you something important, let's look back at us...</p>
+            <button class="btn" onclick="showNextMemory()">Start the Journey</button>
+        </div>
+
+        <div id="page-gallery" class="page">
+            <img id="gallery-img" src="" class="photo-frame">
+            <p id="gallery-text"></p>
+            <button class="btn" onclick="showNextMemory()">Next Memory ✨</button>
+        </div>
+
+        <div id="page-valentine" class="page">
+            <h1>The Big Question...</h1>
+            <p>Thel, will you be my Valentine?</p>
+            <div style="min-height: 80px; display: flex; justify-content: center; align-items: center;">
+                <button class="btn btn-yes" id="yesBtn" onclick="nextPage('sure')">YES!</button>
+                <button class="btn" id="noBtn" onclick="makeYesBigger()">No</button>
+            </div>
+        </div>
+
+        <div id="page-sure" class="page">
+            <h1>Are you sure, Thel? 🤨</h1>
+            <p>Think about it very carefully...</p>
+            <button class="btn" onclick="nextPage('promise')">Yes</button>
+            <button class="btn btn-yes" onclick="nextPage('promise')">Definitely Yes</button>
+        </div>
+
+        <div id="page-promise" class="page">
+            <h1>Pinky Promise? 🤙</h1>
+            <p>No take-backsies, okay Thel?</p>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; min-height: 100px; width: 100%;">
+                <button class="btn btn-yes" onclick="startLoading()">Pinky Promise!</button>
+                <button class="btn" id="runaway-no" onmouseover="runAway()" onclick="runAway()">No</button>
+            </div>
+        </div>
+
+        <div id="page-loading" class="page">
+            <h1 style="font-size: 1.5rem;">Processing Promise...</h1>
+            <div class="bar-bg" style="width: 80%; height: 10px; margin: 20px 0;">
+                <div id="load-bar" class="bar-fill" style="width: 0%;"></div>
+            </div>
+            <p id="load-text">Calibrating romantic energy...</p>
+        </div>
+
+        <div id="page-select" class="page">
+            <h1>Pick Your Fighter ❤️</h1>
+            <div id="stats" class="stats-container">
+                <div class="stat-row">ROMANCE <div class="bar-bg"><div id="bar-rom" class="bar-fill"></div></div></div>
+                <div class="stat-row">HUMOR <div class="bar-bg"><div id="bar-hum" class="bar-fill"></div></div></div>
+                <div class="stat-row">PROTECT <div class="bar-bg"><div id="bar-pro" class="bar-fill"></div></div></div>
+            </div>
+            <div class="select-grid">
+                <div class="char-card" onclick="updateSelection(this, 'The Romantic', 100, 40, 70, '#ffccd5')">
+                    <img src="Romantic.jpg"><span>The Romantic</span>
+                </div>
+                <div class="char-card" onclick="updateSelection(this, 'The Funny One', 50, 100, 40, '#fff4cc')">
+                    <img src="Funny.jpg"><span>The Funny One</span>
+                </div>
+                <div class="char-card" onclick="updateSelection(this, 'The Protective', 70, 30, 100, '#d0e1ff')">
+                    <img src="Protective2.jpg"><span>The Protective</span>
+                </div>
+                <div class="char-card" onclick="updateSelection(this, 'The Retriever', 90, 90, 80, '#d4ffda')">
+                    <img src="Puppy.jpg"><span>The Retriever<br><small>(+100 Wagging Energy)</small></span>
+                </div>
+            </div>
+            <button class="btn" style="margin-top:15px" onclick="confirmSelection()">Confirm Selection ⚔️</button>
+        </div>
+
+        <div id="page-battle" class="page">
+            <div class="battle-container" id="battle-ui" style="display: flex;">
+                <div class="hp-section">
+                    BOSS: VALENTINE STEALER
+                    <div class="hp-bar-bg"><div id="boss-hp" class="hp-fill"></div></div>
+                </div>
+                <img src="https://openmoji.org/data/color/svg/1F47B.svg" class="boss-sprite" id="boss-sprite" alt="Ghost Monster">
+                <div class="hp-section">
+                    PLAYER: THEL
+                    <div class="hp-bar-bg"><div class="hp-fill" style="width: 100%; background: #2ec4b6;"></div></div>
+                </div>
+                <div class="dialogue-box" id="battle-text">
+                    "You will never get him alive..."
+                </div>
+                <div class="move-grid-battle" id="battle-moves">
+                    <button class="btn-move" onclick="playTurn(1)">LOVE BEAM</button>
+                    <button class="btn-move" onclick="playTurn(2)">CUDDLE CRUSH</button>
+                    <button class="btn-move" onclick="playTurn(3)">COMEDY CRIT</button>
+                    <button class="btn-move" onclick="playTurn(4)">KISS ATTACK</button>
+                </div>
+                <button class="btn" id="battle-win-btn" style="display:none; margin: 0; padding: 10px; font-family:'Press Start 2P'; font-size:8px;" onclick="nextPage('finale')">RESCUE Cywk ❤️</button>
+            </div>
+        </div>
+
+        <div id="page-finale" class="page">
+            <h1>YAY! I LOVE YOU! 🎉</h1>
+            <div id="thank-you-section" style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+                <img src="MeCywk.jpg" class="photo-frame">
+                <div style="margin-top: 15px; width: 100%;">
+                    <p id="final-msg" style="margin-bottom: 10px;"></p>
+                    <p>I have a special gift for you inside this chest...</p>
+                    <div class="chest-container" onclick="openChest()" style="margin: 10px auto;">
+                        <div id="chest-closed">🎁</div>
+                        <p style="font-size: 0.6rem; font-family: 'Press Start 2P'; color: var(--primary); margin-top: 5px;">OPEN ME</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="memory-zoom-container">
+                <div class="video-flipbook-frame">
+                    <div class="film-grain"></div>
+                    <video id="memory-video" playsinline loop muted>
+                        <source src="Baby.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <div style="background: white; padding: 10px; border-radius: 0 0 15px 15px; width: 80%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-top: -5px; z-index: 1;">
+                    <p style="font-size: 1.1rem; font-family: 'Dancing Script'; margin: 0;">Our Story in Motion ❤️</p>
+                </div>
+                <button class="btn" style="font-size: 0.7rem; padding: 8px 15px; margin-top: 15px;" onclick="closeMemory()">Back to Loot</button>
+            </div>
+
+            <div id="post-chest-loot" style="display:none; width: 100%; margin-top: 20px;">
+                <button class="btn" id="noteBtn" onclick="showNote()">Read My Secret Note 💌</button>
+                <div id="secret-note" class="secret-note"></div>
+                <button class="btn" id="couponBtn" onclick="showCoupon()" style="margin-top: 10px;">Claim Your Surprise Surprise! 🎟️</button>
+            </div>
+
+            <div class="scratch-wrapper" id="scratch-area">
+                <div class="ticket" id="capture-ticket">
+                    <div style="font-size: 0.5rem; letter-spacing: 2px;">OFFICIAL WHATEVER YOU WANNA DO PASS</div>
+                    <div style="font-family: 'Dancing Script'; font-size: 1.4rem; margin: 5px 0;">Moe Zalap Phyu</div>
+                    <div style="font-size: 0.8rem; border-top: 1px solid #eee; padding-top: 5px; font-weight:bold; color:var(--primary);">VALID FOR: FEB 14, 2026</div>
+                    <div style="font-size: 0.45rem; color: #777; margin-top: 10px; text-align: left; line-height: 1.2;">
+                        <b>Terms & Conditions:</b><br>
+                        • One-time use per Valentine's Day.<br>
+                        • Valid for dates, snacks, or unlimited cuddles.<br>
+                        • Holder is entitled to 100% of Cywk's attention.<br>
+                        • Non-refundable and non-transferable.
+                    </div>
+                </div>
+                <canvas id="scratch-canvas"></canvas>
+            </div>
+            <button class="btn" id="dlBtn" style="background: #2ec4b6; margin-top: 10px; display: none;" onclick="downloadPass()">Download Pass 📸</button>
+        </div>
+    </div>
+
+    <script>
+    let yesSize = 1; let running = false; let currentMemory = 0; let selectedMode = "";
+    let bossHealth = 100;
+    const music = document.getElementById('bgMusic');
+
+    const memories = [
+        { src: "Zalap.jpg", text: "The day we first met...14th of June...2025... That day i was like WOAH!!! She is mad gorgeous." },
+        { src: "Me&Zalap.jpg", text: "Remember this date? We had our first kiss then" },
+        { src: "Zalap2.jpg", text: "You look so beautiful in this one, Thel. But atst u look good anyday...everyday" },
+        { src: "Me&Zalap2.jpg", text: "I'm the luckiest guy to have you... Ever" }
+    ];
+
+    const loveWords = ["Gorgeous", "My Everything", "The Best", "Smartest", "Kindest", "Perfect", "The One", "Mine ❤️"];
+    const runawayMessages = ["Too slow! 💨", "Over here! 😜", "Not even close! 😂", "Try harder, Thel! ✨", "Nope! ✋"];
+
+    function checkName() {
+        const name = document.getElementById('name-input').value.trim();
+        if (name.toLowerCase() === "moe zalap phyu".toLowerCase()) {
+            music.play().catch(e => console.log("Music play blocked"));
+            nextPage(1);
+        } else {
+            const err = document.getElementById('error-msg');
+            err.style.visibility = 'visible';
+            setTimeout(() => { err.style.visibility = 'hidden'; }, 2000);
+        }
+    }
+
+    function startBattle() {
+        nextPage('battle');
+        const dialog = document.getElementById('battle-text');
+        setTimeout(() => {
+            dialog.innerText = "Oh, I will! He's MINE! ❤️";
+            setTimeout(() => { dialog.innerText = "You are protecting Cywk! Choose an attack!"; }, 2000);
+        }, 2000);
+    }
+
+    function playTurn(moveType) {
+        if(bossHealth <= 0) return;
+        const bossHpFill = document.getElementById('boss-hp');
+        const dialog = document.getElementById('battle-text');
+        const sprite = document.getElementById('boss-sprite');
+        sprite.style.animation = 'none';
+        void sprite.offsetWidth;
+        sprite.style.animation = 'shake 0.2s 3';
+        bossHealth -= 25;
+        bossHpFill.style.width = bossHealth + "%";
+        const moves = ["LOVE BEAM", "CUDDLE CRUSH", "COMEDY CRIT", "KISS ATTACK"];
+        dialog.innerText = `Thel used ${moves[moveType-1]}! It's super effective!`;
+        if (bossHealth <= 0) {
+            dialog.innerText = "BOSS DEFEATED! Cywk is safe! Rescue him now!";
+            document.getElementById('battle-moves').style.display = 'none';
+            document.getElementById('battle-win-btn').style.display = 'block';
+        }
+    }
+
+    function openChest() {
+        document.getElementById('thank-you-section').style.display = 'none';
+        const container = document.getElementById('memory-zoom-container');
+        const video = document.getElementById('memory-video');
+        container.style.display = 'flex';
+        setTimeout(() => {
+            video.play();
+            video.playbackRate = 0.9; 
+        }, 500);
+        document.getElementById('post-chest-loot').style.display = 'block';
+    }
+
+    function closeMemory() {
+        document.getElementById('memory-zoom-container').style.display = 'none';
+        document.getElementById('thank-you-section').style.display = 'flex';
+        document.getElementById('memory-video').pause();
+    }
+
+    function spawnWord() {
+        const word = document.createElement('div');
+        word.className = 'word-float';
+        word.innerText = loveWords[Math.floor(Math.random() * loveWords.length)];
+        word.style.left = Math.random() * 70 + 15 + "vw";
+        word.style.top = "60vh";
+        document.body.appendChild(word);
+        setTimeout(() => word.remove(), 4000);
+    }
+
+    function showNextMemory() {
+        music.play().catch(e => {});
+        if (currentMemory < memories.length) {
+            spawnWord();
+            document.getElementById('gallery-img').src = memories[currentMemory].src;
+            document.getElementById('gallery-text').innerText = memories[currentMemory].text;
+            nextPage('gallery');
+            currentMemory++;
+        } else { nextPage('valentine'); }
+    }
+
+    function startLoading() {
+        nextPage('loading');
+        let width = 0;
+        const bar = document.getElementById('load-bar');
+        const text = document.getElementById('load-text');
+        const interval = setInterval(() => {
+            width += 2;
+            bar.style.width = width + '%';
+            if (width === 20) text.innerText = "Syncing heartbeats...";
+            if (width === 50) text.innerText = "Rejecting all other options...";
+            if (width === 80) text.innerText = "Finalizing forever...";
+            if (width >= 100) { clearInterval(interval); nextPage('select'); }
+        }, 60);
+    }
+
+    function nextPage(id) {
+        document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+        const targetId = (id === 1) ? 'page1' : 'page-' + id;
+        const targetEl = document.getElementById(targetId);
+        targetEl.style.display = 'flex';
+        setTimeout(() => targetEl.classList.add('active'), 10);
+        if (id === 'select') document.getElementById('stats').style.display = 'block';
+    }
+
+    function updateSelection(card, mode, r, h, p, color) {
+        document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedMode = mode;
+        document.getElementById('bar-rom').style.width = r + '%';
+        document.getElementById('bar-hum').style.width = h + '%';
+        document.getElementById('bar-pro').style.width = p + '%';
+        document.body.style.setProperty('--bg-color', color);
+    }
+
+    function confirmSelection() {
+        if (!selectedMode) return alert("Select your fighter first!");
+        const notes = {
+            'The Romantic': "Thel, I promise to always treat you like a queen. I'll buy you flowers for no reason and remind you every single day how lucky I am to have you. I love you so much!",
+            'The Funny One': "Thel, life is better when we're laughing. I promise to always try to make you giggle, even when you're mad at me. You're my favorite comedy partner!",
+            'The Protective': "Thel, you're safe with me. I'll always be your biggest supporter and your shield. I promise to look out for you forever. I love you more than words!",
+            'The Retriever': "WOF! Thel, I'm just so happy to be yours! I promise to always greet you with 100% energy and never get tired of your company. You're my favorite human!"
+        };
+        document.getElementById('secret-note').innerText = notes[selectedMode];
+        document.getElementById('final-msg').innerHTML = `<b>${selectedMode} Mode Activated!</b> ❤️<br>THANK YOU FOR AGREEING TO BE MY VALENTINE, Thel!`;
+        startBattle();
+    }
+
+    function showNote() {
+        document.getElementById('secret-note').style.display = 'block';
+        document.getElementById('noteBtn').style.display = 'none';
+    }
+
+    function showCoupon() {
+        document.getElementById('scratch-area').style.display = 'block';
+        document.getElementById('couponBtn').style.display = 'none';
+        document.getElementById('dlBtn').style.display = 'inline-block';
+        initScratch();
+    }
+
+    function initScratch() {
+        const canvas = document.getElementById('scratch-canvas');
+        const ctx = canvas.getContext('2d');
+        const ticket = document.getElementById('capture-ticket');
+        canvas.width = ticket.offsetWidth;
+        canvas.height = ticket.offsetHeight;
+        ctx.fillStyle = '#C0C0C0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#590d22';
+        ctx.font = 'bold 16px Quicksand';
+        ctx.textAlign = 'center';
+        ctx.fillText('Scratch to Reveal! ✨', canvas.width/2, canvas.height/2);
+        let isDrawing = false;
+        function scratch(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, 25, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        canvas.addEventListener('touchstart', () => isDrawing = true);
+        window.addEventListener('mousemove', scratch);
+        window.addEventListener('touchmove', scratch, { passive: false });
+        window.addEventListener('mouseup', () => isDrawing = false);
+        window.addEventListener('touchend', () => isDrawing = false);
+    }
+
+    function makeYesBigger() { yesSize += 0.5; document.getElementById('yesBtn').style.transform = `scale(${yesSize})`; }
+
+    function runAway() {
+        const btn = document.getElementById('runaway-no');
+        if (!running) { btn.style.position = 'fixed'; btn.style.zIndex = '9999'; running = true; }
+        btn.innerText = runawayMessages[Math.floor(Math.random() * runawayMessages.length)];
+        let newTop = Math.max(20, Math.min(Math.random() * window.innerHeight, window.innerHeight - 80));
+        let newLeft = Math.max(20, Math.min(Math.random() * window.innerWidth, window.innerWidth - 120));
+        btn.style.top = newTop + 'px'; btn.style.left = newLeft + 'px';
+    }
+
+    function createSparkle(e) {
+        for (let i = 0; i < 6; i++) {
+            const s = document.createElement('div'); s.className = 'sparkle'; s.innerHTML = '❤️';
+            s.style.left = e.pageX + 'px'; s.style.top = e.pageY + 'px';
+            s.style.setProperty('--tx', (Math.random() - 0.5) * 150 + 'px');
+            s.style.setProperty('--ty', (Math.random() - 0.5) * 150 + 'px');
+            document.body.appendChild(s); setTimeout(() => s.remove(), 800);
+        }
+    }
+
+    function downloadPass() {
+        const ticket = document.getElementById('capture-ticket');
+        html2canvas(ticket, { backgroundColor: "#ffffff", scale: 3 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = 'Moe_Zalap_Phyu_Pass.png';
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        });
+    }
+
+    setInterval(() => {
+        const h = document.createElement('div'); h.className = 'bg-heart'; h.innerHTML = '❤️';
+        h.style.left = Math.random() * 100 + 'vw'; document.body.appendChild(h);
+        setTimeout(() => h.remove(), 6000);
+    }, 600);
+</script>
+</body>
+</html>
